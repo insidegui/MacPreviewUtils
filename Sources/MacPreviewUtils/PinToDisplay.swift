@@ -7,11 +7,15 @@ public extension View {
     /// See ``PinToDisplayModifier``.
     @ViewBuilder
     func pin(to display: DisplaySelector, alignment: Alignment = .center, interactiveOnly: Bool = false) -> some View {
+        #if DEBUG
         if ProcessInfo.isSwiftUIPreview {
             modifier(PinToDisplayModifier(selector: display, alignment: alignment, interactiveOnly: interactiveOnly))
         } else {
             self
         }
+        #else
+        self
+        #endif
     }
 }
 
