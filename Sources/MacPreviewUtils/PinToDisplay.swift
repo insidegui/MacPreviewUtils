@@ -4,18 +4,7 @@ import SwiftUI
 
 public extension View {
 
-    /// Causes the SwiftUI view to always show up in a specific display.
-    /// - Parameter predicate: Used to determine which display will be used.
-    /// - Parameter interactiveOnly: If `true`, then the modifier will have no effect unless the SwiftUI preview is in interactive mode.
-    /// - Returns: The modified view.
-    ///
-    /// Apply this modifier to a macOS SwiftUI preview's contents in order to always show the preview in a specific display when it's in interactive mode.
-    /// For more information on how to select the display, read ``DisplayPredicate``.
-    ///
-    /// This modifier has no effect if the app is not running in a SwiftUI preview, or if the preview is not in interactive mode.
-    ///
-    /// - warning: This modifier is only compiled in debug builds, so if you're not already guarding your SwiftUI previews
-    /// from being compiled in release mode, be sure to wrap them in `#if DEBUG`/`#endif`.
+    /// See ``PinToDisplayModifier``.
     @ViewBuilder
     func pin(to display: DisplaySelector, alignment: Alignment = .center, interactiveOnly: Bool = false) -> some View {
         if ProcessInfo.isSwiftUIPreview {
@@ -36,11 +25,11 @@ public struct DisplaySelector: ExpressibleByStringLiteral {
     /// - Parameter value: A value that the target display's localized name should contain (case insensitive).
     ///
     /// When selecting a display based on name, you don't have to call this initializer,
-    /// you can initialize a ``DisplayPredicate`` from a string literal:
+    /// you can initialize a ``DisplaySelector`` from a string literal:
     ///
     /// ```swift
     /// MyView()
-    ///     .previewOnDisplay("dell")
+    ///     .pin(to: "dell")
     /// ```
     public init(stringLiteral value: StringLiteralType) {
         self.filter = { $0.localizedName.localizedCaseInsensitiveContains(value) }
@@ -80,13 +69,32 @@ extension DisplaySelector {
     }
 }
 
-private struct PinToDisplayModifier: ViewModifier {
+/// Causes the SwiftUI view to always show up in a specific display.
+public struct PinToDisplayModifier: ViewModifier {
 
     var selector: DisplaySelector
     var alignment: Alignment
     var interactiveOnly: Bool
 
-    func body(content: Content) -> some View {
+    /// Causes the SwiftUI view to always show up in a specific display.
+    /// - Parameter predicate: Used to determine which display will be used.
+    /// - Parameter alignment: Determines the position for the preview window within the specified display's bounds.
+    /// Supported alignments are `.leading`, `.center`, `.trailing`, `.top`, `.bottom`, or any valid combination such as `.topLeading`.
+    /// - Parameter interactiveOnly: If `true`, then the modifier will have no effect unless the SwiftUI preview is in interactive mode.
+    ///
+    /// Apply this modifier to a macOS SwiftUI preview's contents in order to always show the preview in a specific display.
+    /// For more information on how to select the display, read ``DisplaySelector``.
+    ///
+    /// This modifier has no effect if the app is not running in a SwiftUI preview, or in release builds.
+    ///
+    /// - note: There's a convenient `.pin(...)` extension on `View` for this modifier, prefer that over using it directly.
+    public init(selector: DisplaySelector, alignment: Alignment, interactiveOnly: Bool) {
+        self.selector = selector
+        self.alignment = alignment
+        self.interactiveOnly = interactiveOnly
+    }
+
+    public func body(content: Content) -> some View {
         content
             .onAppear {
                 guard let targetScreen = NSScreen.screens.first(where: { selector($0) }) else { return }
