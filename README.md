@@ -45,7 +45,7 @@ struct MyView_Previews: PreviewProvider {
     static var previews: some View {
         /// This preview will show up on the connected Sidecar display.
         MyView()
-            .pin(to: .builtInDisplay, alignment: .center, interactiveOnly: false)
+            .pin(to: .sidecarDisplay, alignment: .center, interactiveOnly: false)
     }
 }
 ```
