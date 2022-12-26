@@ -1,9 +1,14 @@
 import SwiftUI
 
 public extension View {
-    func previewConsole(alignment: Alignment? = nil, options: PreviewConsoleModifier.Options, source: StaticString = #file) -> some View {
+    func previewConsole(display: DisplaySelector? = nil,
+                        alignment: Alignment? = nil,
+                        options: PreviewConsoleModifier.Options = [],
+                        source: StaticString = #file) -> some View
+    {
         #if DEBUG
         modifier(PreviewConsoleModifier(alignment: alignment, options: options, source: source))
+            .overrideDisplaySelectorIfNeeded(with: display)
             .injectPreviewWindow()
         #else
         self
@@ -12,6 +17,18 @@ public extension View {
 }
 
 #if DEBUG
+extension View {
+    @ViewBuilder
+    func overrideDisplaySelectorIfNeeded(with selector: DisplaySelector?) -> some View {
+        if let selector {
+            self
+                .environment(\.displaySelector, selector)
+        } else {
+            self
+        }
+    }
+}
+
 public struct PreviewConsoleModifier: ViewModifier {
 
     /// Configures the behavior of ``PreviewConsoleModifier``.
@@ -26,9 +43,39 @@ public struct PreviewConsoleModifier: ViewModifier {
         public static let interactiveOnly = Options(rawValue: 1 << 0)
     }
 
+    /// Determines which of the Mac's displays will be used to show the console.
+    /// If not provided, uses the Mac's main display, or the same display as the ``PinToDisplayModifier``
+    /// applied to the view hierarchy.
+    public var display: DisplaySelector?
+
+    /// Determines the position of the console within the display's bounds.
+    /// If `nil`, then the console will be positioned automatically next to the preview window when using ``PinToDisplayModifier``,
+    /// or at the bottom trailing edge if not using the ``PinToDisplayModifier``.
     public var alignment: Alignment?
+
+    /// Configures additional behavior for the console.
     public var options: Options
+
+    /// Used by the console to indicate which Swift file that included the modifier.
     public var source: StaticString
+
+    /// Shows an output console that streams the contents of the app's standard output
+    /// when running in SwiftUI previews.
+    /// - Parameters:
+    ///   - display: See ``display``.
+    ///   - alignment: See ``alignment``.
+    ///   - options: See ``options-swift.property``
+    ///   - source: See ``source``.
+    public init(display: DisplaySelector? = nil,
+                alignment: Alignment? = nil,
+                options: Options,
+                source: StaticString)
+    {
+        self.display = display
+        self.alignment = alignment
+        self.options = options
+        self.source = source
+    }
 
     @ViewBuilder
     public func body(content: Content) -> some View {
@@ -71,14 +118,10 @@ private struct PreviewConsoleContainer<Content>: View where Content: View {
     @Environment(\.displaySelector)
     private var displaySelector
 
-    @State private var consoleController: ConsoleWindowController?
-
     var body: some View {
         content()
-            .onChange(of: previewWindow) { targetWindow in
-                guard let targetWindow else { return }
-
-                consoleController?.close()
+            .onChange(of: previewWindow) { [previewWindow] targetWindow in
+                guard let targetWindow, targetWindow !== previewWindow else { return }
 
                 let controller = ConsoleWindowController(
                     targetting: targetWindow,
@@ -87,22 +130,37 @@ private struct PreviewConsoleContainer<Content>: View where Content: View {
                     source: source
                 )
                 controller.showWindow(nil)
-
-                consoleController = controller
             }
     }
 }
 
 // MARK: - Console UI Implementation
 
+final class ConsolePanel: NSPanel, MacPreviewUtilsWindow {
+
+    override func constrainFrameRect(_ frameRect: NSRect, to screen: NSScreen?) -> NSRect {
+        guard let screen else {
+            return super.constrainFrameRect(frameRect, to: screen)
+        }
+
+        return constrainPreview(to: frameRect, on: screen)
+    }
+
+}
+
 final class ConsoleWindowController: NSWindowController {
+
+    static var current: ConsoleWindowController?
 
     weak var trackedWindow: NSWindow?
     var alignment: Alignment?
     var displaySelector: DisplaySelector?
 
     convenience init(targetting trackedWindow: NSWindow, alignment: Alignment?, displaySelector: DisplaySelector, source: StaticString) {
-        let panel = NSPanel(
+        Self.current?.close()
+        Self.current = nil
+
+        let panel = ConsolePanel(
             contentRect: NSRect(x: 0, y: 0, width: PreviewConsoleView.minWidth, height: PreviewConsoleView.minHeight),
             styleMask: [.titled, .closable, .resizable, .fullSizeContentView, .hudWindow, .utilityWindow],
             backing: .buffered,
@@ -121,6 +179,8 @@ final class ConsoleWindowController: NSWindowController {
         panel.title = URL(fileURLWithPath: "\(source)").deletingPathExtension().lastPathComponent
 
         contentViewController = NSHostingController(rootView: PreviewConsoleView())
+
+        Self.current = self
     }
 
     override func showWindow(_ sender: Any?) {
@@ -128,23 +188,43 @@ final class ConsoleWindowController: NSWindowController {
 
         ProcessPipe.current.activate()
 
-        DispatchQueue.main.async {
+        NSApplication.shared.activateForPreview { [weak self] in
+            guard let self = self else { return }
+
             self.positionWindows()
-            self.window?.alphaValue = 1
+
+            DispatchQueue.main.async {
+                self.window?.alphaValue = 1
+            }
         }
     }
 
     private let padding: CGFloat = 22
 
-    private func positionWindows() {
-        NSLog("👁️‍🗨️ Display selector: \(String(describing: displaySelector))")
+    private var effectiveAlignment: Alignment { alignment ?? .bottomTrailing }
 
-        if let alignment {
-            #warning("TODO: Allow user to specify display for this modifier as well")
-            window?.position(on: .main!, using: alignment, ignoreSafeArea: false)
+    private var shouldTrackWindow: Bool {
+        guard let trackedWindow else { return false }
+        return trackedWindow.frame.origin != .zero
+    }
+
+    private func positionWindows() {
+        guard shouldTrackWindow else {
+            positionWithoutTrackedWindow()
+            return
+        }
+
+        if alignment != nil {
+            positionWithoutTrackedWindow()
         } else {
             positionRelativeToPreview()
         }
+    }
+
+    private func positionWithoutTrackedWindow() {
+        guard let screen = NSScreen.matching(displaySelector ?? .mainDisplay) else { return }
+
+        window?.position(on: screen, using: effectiveAlignment, ignoreSafeArea: false)
     }
 
     private func positionRelativeToPreview() {
@@ -152,6 +232,7 @@ final class ConsoleWindowController: NSWindowController {
 
         var trackedFrame = trackedWindow.frame
         trackedFrame.origin.y += consoleWindow.frame.height
+        trackedFrame = trackedWindow.constrainPreview(to: trackedFrame, on: trackedWindow.screen)
 
         trackedWindow.setFrame(trackedFrame, display: true)
 
@@ -193,8 +274,8 @@ struct PreviewConsoleTestView: View {
 struct PreviewConsoleTestView_Previews: PreviewProvider {
     static var previews: some View {
         PreviewConsoleTestView()
-            .pin(to: .builtInDisplay, alignment: .topTrailing, options: [])
-            .previewConsole(alignment: .topTrailing, options: [])
+            .pin(to: .sidecarDisplay, alignment: .center, options: [])
+            .previewConsole()
     }
 }
 #endif

@@ -147,7 +147,7 @@ public struct PinToDisplayModifier: ViewModifier {
     }
 
     private func attach(to window: NSWindow) {
-        guard let targetScreen = NSScreen.screens.first(where: { selector($0) }) else { return }
+        guard let targetScreen = NSScreen.matching(selector) else { return }
 
         let app = NSApplication.shared
         let windows = app.windows
@@ -162,12 +162,9 @@ public struct PinToDisplayModifier: ViewModifier {
         window.alphaValue = 0
         window.hidesOnDeactivate = false
 
-        windows.filter({ $0 !== window }).forEach({ $0.close() })
+        windows.filter({ $0 !== window && !($0 is MacPreviewUtilsWindow) }).forEach({ $0.close() })
 
-        app.setActivationPolicy(.accessory)
-        app.unhide(nil)
-
-        DispatchQueue.main.async {
+        app.activateForPreview {
             if options.contains(.hideTitleBar) {
                 window.styleMask.remove(.titled)
             }
@@ -180,7 +177,6 @@ public struct PinToDisplayModifier: ViewModifier {
 
             DispatchQueue.main.async {
                 window.alphaValue = 1
-                ProcessInfo.activateXcode()
             }
         }
     }
@@ -222,6 +218,12 @@ extension NSWindow {
         }
 
         setFrame(f, display: true, animate: false)
+    }
+}
+
+extension NSScreen {
+    static func matching(_ selector: DisplaySelector) -> NSScreen? {
+        NSScreen.screens.first(where: { selector($0) })
     }
 }
 
