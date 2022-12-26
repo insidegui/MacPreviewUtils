@@ -6,10 +6,14 @@ public extension View {
 
     /// See ``PinToDisplayModifier``.
     @ViewBuilder
-    func pin(to display: DisplaySelector, alignment: Alignment = .center, interactiveOnly: Bool = false) -> some View {
+    func pin(to display: DisplaySelector, alignment: Alignment = .center, options: PinToDisplayModifier.Options = []) -> some View {
         #if DEBUG
         if ProcessInfo.isSwiftUIPreview {
-            modifier(PinToDisplayModifier(selector: display, alignment: alignment, interactiveOnly: interactiveOnly))
+            modifier(PinToDisplayModifier(
+                selector: display,
+                alignment: alignment,
+                options: options
+            ))
         } else {
             self
         }
@@ -76,15 +80,31 @@ extension DisplaySelector {
 /// Causes the SwiftUI view to always show up in a specific display.
 public struct PinToDisplayModifier: ViewModifier {
 
+    /// Configures the behavior of the ``PinToDisplayModifier``.
+    public struct Options: OptionSet {
+        public let rawValue: UInt
+
+        public init(rawValue: UInt) {
+            self.rawValue = rawValue
+        }
+
+        /// The preview will only be shown pinned to the specified display when it's running in interactive mode (play button in Xcode's canvas).
+        public static let interactiveOnly = Options(rawValue: 1 << 0)
+        /// The preview window will ignore safe areas like the Dock and Menu Bar.
+        public static let ignoreSafeArea = Options(rawValue: 1 << 1)
+
+        public static let all: Options = [.interactiveOnly, .ignoreSafeArea]
+    }
+
     var selector: DisplaySelector
     var alignment: Alignment
-    var interactiveOnly: Bool
+    var options: Options
 
     /// Causes the SwiftUI view to always show up in a specific display.
     /// - Parameter predicate: Used to determine which display will be used.
     /// - Parameter alignment: Determines the position for the preview window within the specified display's bounds.
     /// Supported alignments are `.leading`, `.center`, `.trailing`, `.top`, `.bottom`, or any valid combination such as `.topLeading`.
-    /// - Parameter interactiveOnly: If `true`, then the modifier will have no effect unless the SwiftUI preview is in interactive mode.
+    /// - Parameter options: Controls the behavior of the display pinning, such as whether to enable it only for interactive previews and how to handle safe areas.
     ///
     /// Apply this modifier to a macOS SwiftUI preview's contents in order to always show the preview in a specific display.
     /// For more information on how to select the display, read ``DisplaySelector``.
@@ -92,70 +112,83 @@ public struct PinToDisplayModifier: ViewModifier {
     /// This modifier has no effect if the app is not running in a SwiftUI preview, or in release builds.
     ///
     /// - note: There's a convenient `.pin(...)` extension on `View` for this modifier, prefer that over using it directly.
-    public init(selector: DisplaySelector, alignment: Alignment, interactiveOnly: Bool) {
+    public init(selector: DisplaySelector, alignment: Alignment, options: Options = []) {
         self.selector = selector
         self.alignment = alignment
-        self.interactiveOnly = interactiveOnly
+        self.options = options
     }
+
+    private let windowSubject = NSWindowSubject()
 
     public func body(content: Content) -> some View {
         content
-            .onAppear {
-                guard let targetScreen = NSScreen.screens.first(where: { selector($0) }) else { return }
-
-                let app = NSApplication.shared
-                let windows = app.windows
-
-                if interactiveOnly {
-                    guard ProcessInfo.isInteractiveSwiftUIPreview else { return }
-                }
-
-                guard let targetWindow = windows.last else { return }
-
-                targetWindow.level = .floating
-                targetWindow.makeKeyAndOrderFront(nil)
-                targetWindow.isMovable = false
-                targetWindow.alphaValue = 0
-                targetWindow.hidesOnDeactivate = false
-
-                windows.filter({ $0 !== targetWindow }).forEach({ $0.close() })
-
-                app.setActivationPolicy(.accessory)
-                app.unhide(nil)
-
-                DispatchQueue.main.async {
-                    targetWindow.position(on: targetScreen, using: alignment)
-
-                    DispatchQueue.main.async {
-                        targetWindow.alphaValue = 1
-                        ProcessInfo.activateXcode()
-                    }
-                }
+            .background {
+                PreviewWindowProvidingView(subject: windowSubject)
             }
+            .onReceive(windowSubject) { window in
+                guard let window else { return }
+                attach(to: window)
+            }
+    }
+
+    private func attach(to window: NSWindow) {
+        guard let targetScreen = NSScreen.screens.first(where: { selector($0) }) else { return }
+
+        let app = NSApplication.shared
+        let windows = app.windows
+
+        if options.contains(.interactiveOnly) {
+            guard ProcessInfo.isInteractiveSwiftUIPreview else { return }
+        }
+
+        window.level = options.contains(.ignoreSafeArea) ? .statusBar : .floating
+        window.makeKeyAndOrderFront(nil)
+        window.isMovable = false
+        window.alphaValue = 0
+        window.hidesOnDeactivate = false
+
+        windows.filter({ $0 !== window }).forEach({ $0.close() })
+
+        app.setActivationPolicy(.accessory)
+        app.unhide(nil)
+
+        DispatchQueue.main.async {
+            window.position(
+                on: targetScreen,
+                using: alignment,
+                ignoreSafeArea: options.contains(.ignoreSafeArea)
+            )
+
+            DispatchQueue.main.async {
+                window.alphaValue = 1
+                ProcessInfo.activateXcode()
+            }
+        }
     }
 
 }
 
 private extension NSWindow {
-    func position(on screen: NSScreen, using alignment: Alignment) {
+    func position(on screen: NSScreen, using alignment: Alignment, ignoreSafeArea: Bool) {
+        let screenFrame = ignoreSafeArea ? screen.frame : screen.visibleFrame
         var f = frame
 
         switch alignment.horizontal {
         case .leading:
-            f.origin.x = screen.frame.minX
+            f.origin.x = screenFrame.minX
         case .trailing:
-            f.origin.x = screen.frame.maxX - f.size.width
+            f.origin.x = screenFrame.maxX - f.size.width
         default:
-            f.origin.x = screen.frame.midX - f.size.width / 2
+            f.origin.x = screenFrame.midX - f.size.width / 2
         }
 
         switch alignment.vertical {
         case .top:
-            f.origin.y = screen.frame.maxY - f.size.height
+            f.origin.y = screenFrame.maxY - f.size.height
         case .bottom:
-            f.origin.y = screen.frame.minY
+            f.origin.y = screenFrame.minY
         default:
-            f.origin.y = screen.frame.midY - f.size.height / 2
+            f.origin.y = screenFrame.midY - f.size.height / 2
         }
 
         setFrame(f, display: true, animate: false)
@@ -164,12 +197,12 @@ private extension NSWindow {
 
 struct PreviewOnExternalDisplay_Previews: PreviewProvider {
     static var previews: some View {
-        Text("Hello, world 123")
-            .foregroundColor(.red)
+        Text("Hello, world")
+            .foregroundColor(.green)
             .font(.largeTitle)
-            .frame(minWidth: 300)
-            .padding(120)
-            .pin(to: .builtInDisplay, alignment: .topLeading, interactiveOnly: true)
+            .frame(width: 200, height: 200)
+            .padding()
+            .pin(to: .builtInDisplay, alignment: .top, options: [.ignoreSafeArea])
     }
 }
 #endif

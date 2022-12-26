@@ -16,6 +16,6 @@ struct ExternalDisplayDemo: View {
 struct ExternalDisplayDemo_Previews: PreviewProvider {
     static var previews: some View {
         ExternalDisplayDemo()
-            .pin(to: .sidecarDisplay, alignment: .center, interactiveOnly: false)
+            .pin(to: .sidecarDisplay, alignment: .center, options: [])
     }
 }
