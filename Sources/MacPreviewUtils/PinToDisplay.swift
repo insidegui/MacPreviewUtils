@@ -90,10 +90,18 @@ public struct PinToDisplayModifier: ViewModifier {
 
         /// The preview will only be shown pinned to the specified display when it's running in interactive mode (play button in Xcode's canvas).
         public static let interactiveOnly = Options(rawValue: 1 << 0)
+
         /// The preview window will ignore safe areas like the Dock and Menu Bar.
+        ///
+        /// - note: If you'd like to have an interactive preview that overlaps with the macOS Menu Bar,
+        /// you must set both ``ignoreSafeArea`` and ``hideTitleBar``.
         public static let ignoreSafeArea = Options(rawValue: 1 << 1)
 
-        public static let all: Options = [.interactiveOnly, .ignoreSafeArea]
+        /// The preview window will have its title bar hidden when running in interactive mode.
+        ///
+        /// - note: If you'd like to have an interactive preview that overlaps with the macOS Menu Bar,
+        /// you must set both ``ignoreSafeArea`` and ``hideTitleBar``.
+        public static let hideTitleBar = Options(rawValue: 1 << 2)
     }
 
     var selector: DisplaySelector
@@ -153,6 +161,10 @@ public struct PinToDisplayModifier: ViewModifier {
         app.unhide(nil)
 
         DispatchQueue.main.async {
+            if options.contains(.hideTitleBar) {
+                window.styleMask.remove(.titled)
+            }
+
             window.position(
                 on: targetScreen,
                 using: alignment,
@@ -202,7 +214,7 @@ struct PreviewOnExternalDisplay_Previews: PreviewProvider {
             .font(.largeTitle)
             .frame(width: 200, height: 200)
             .padding()
-            .pin(to: .builtInDisplay, alignment: .top, options: [.ignoreSafeArea])
+            .pin(to: .builtInDisplay, alignment: .top, options: [.interactiveOnly])
     }
 }
 #endif
