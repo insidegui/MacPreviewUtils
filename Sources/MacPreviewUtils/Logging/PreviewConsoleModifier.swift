@@ -248,6 +248,8 @@ final class ConsoleWindowController: NSWindowController {
 // MARK: - Internal Preview
 
 struct PreviewConsoleTestView: View {
+    private var timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
+
     var body: some View {
         VStack {
             Button("Log") {
@@ -255,18 +257,8 @@ struct PreviewConsoleTestView: View {
             }
         }
             .frame(width: 200, height: 200)
-            .onAppear {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                    print("⏰ This message was delayed by half a second")
-
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                        print("⏰⏰ This one was delayed by one second")
-
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                            print("👋🏻 Just logging one last time")
-                        }
-                    }
-                }
+            .onReceive(timer) { _ in
+                print("This was print()ed \(Int(Date.now.timeIntervalSinceReferenceDate))")
             }
     }
 }
@@ -274,7 +266,7 @@ struct PreviewConsoleTestView: View {
 struct PreviewConsoleTestView_Previews: PreviewProvider {
     static var previews: some View {
         PreviewConsoleTestView()
-            .pin(to: .sidecarDisplay, alignment: .center, options: [])
+            .pin(to: .mainDisplay, alignment: .topTrailing, options: [])
             .previewConsole()
     }
 }
