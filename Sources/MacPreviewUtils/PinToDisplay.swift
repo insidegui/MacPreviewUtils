@@ -1,4 +1,5 @@
 import SwiftUI
+import OSLog
 
 // MARK: - Public Interfaces
 
@@ -15,6 +16,7 @@ public extension View {
                 options: options
             ))
         } else {
+            let _ = PinToDisplayModifier.warnImproperUse()
             self
         }
         #else
@@ -129,14 +131,19 @@ public struct PinToDisplayModifier: ViewModifier {
     private let windowSubject = NSWindowSubject()
 
     public func body(content: Content) -> some View {
-        content
-            .background {
-                PreviewWindowProvidingView(subject: windowSubject)
-            }
-            .onReceive(windowSubject) { window in
-                guard let window else { return }
-                attach(to: window)
-            }
+        if ProcessInfo.isSwiftUIPreview {
+            content
+                .background {
+                    PreviewWindowProvidingView(subject: windowSubject)
+                }
+                .onReceive(windowSubject) { window in
+                    guard let window else { return }
+                    attach(to: window)
+                }
+        } else {
+            let _ = Self.warnImproperUse()
+            content
+        }
     }
 
     private func attach(to window: NSWindow) {
@@ -204,6 +211,21 @@ private extension NSWindow {
         }
 
         setFrame(f, display: true, animate: false)
+    }
+}
+
+private extension PinToDisplayModifier {
+    @inline(__always)
+    static func warnImproperUse() {
+        os_log(.fault,
+               dso: rw.dso,
+               log: rw.log,
+               """
+                %{public}@ should only be used in Xcode previews,
+                do not apply it to views outside of a preview provider.
+               """,
+               String(describing: self)
+        )
     }
 }
 
