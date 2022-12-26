@@ -15,6 +15,12 @@ private struct PreviewWindowEnvironmentKey: EnvironmentKey {
 
 typealias NSWindowSubject = PassthroughSubject<NSWindow?, Never>
 
+extension View {
+    func injectPreviewWindow() -> some View {
+        modifier(PreviewWindowModifier())
+    }
+}
+
 struct PreviewWindowModifier: ViewModifier {
 
     private let windowSubject = NSWindowSubject()

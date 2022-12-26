@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		F47D19312959EE9A002C3BB9 /* LoggingDemo.swift in Sources */ = {isa = PBXBuildFile; fileRef = F47D19302959EE9A002C3BB9 /* LoggingDemo.swift */; };
 		F4F6A494295742810000153D /* TestAppApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4F6A493295742810000153D /* TestAppApp.swift */; };
 		F4F6A496295742810000153D /* MaterialTranslucencyDemo.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4F6A495295742810000153D /* MaterialTranslucencyDemo.swift */; };
 		F4F6A498295742820000153D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F4F6A497295742820000153D /* Assets.xcassets */; };
@@ -16,6 +17,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		F47D19302959EE9A002C3BB9 /* LoggingDemo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoggingDemo.swift; sourceTree = "<group>"; };
 		F4F6A490295742810000153D /* TestApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TestApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		F4F6A493295742810000153D /* TestAppApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestAppApp.swift; sourceTree = "<group>"; };
 		F4F6A495295742810000153D /* MaterialTranslucencyDemo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MaterialTranslucencyDemo.swift; sourceTree = "<group>"; };
@@ -88,6 +90,7 @@
 			children = (
 				F4F6A495295742810000153D /* MaterialTranslucencyDemo.swift */,
 				F4F6A4AA29574D400000153D /* ExternalDisplayDemo.swift */,
+				F47D19302959EE9A002C3BB9 /* LoggingDemo.swift */,
 			);
 			path = "Demo Views";
 			sourceTree = "<group>";
@@ -165,6 +168,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F47D19312959EE9A002C3BB9 /* LoggingDemo.swift in Sources */,
 				F4F6A496295742810000153D /* MaterialTranslucencyDemo.swift in Sources */,
 				F4F6A4AB29574D400000153D /* ExternalDisplayDemo.swift in Sources */,
 				F4F6A494295742810000153D /* TestAppApp.swift in Sources */,

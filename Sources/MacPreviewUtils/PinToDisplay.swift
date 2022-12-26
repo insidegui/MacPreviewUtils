@@ -187,7 +187,7 @@ public struct PinToDisplayModifier: ViewModifier {
 
 }
 
-private extension NSWindow {
+extension NSWindow {
     func position(on screen: NSScreen, using alignment: Alignment, ignoreSafeArea: Bool) {
         let screenFrame = ignoreSafeArea ? screen.frame : screen.visibleFrame
         var f = frame
@@ -211,21 +211,6 @@ private extension NSWindow {
         }
 
         setFrame(f, display: true, animate: false)
-    }
-}
-
-private extension PinToDisplayModifier {
-    @inline(__always)
-    static func warnImproperUse() {
-        os_log(.fault,
-               dso: rw.dso,
-               log: rw.log,
-               """
-                %{public}@ should only be used in Xcode previews,
-                do not apply it to views outside of a preview provider.
-               """,
-               String(describing: self)
-        )
     }
 }
 
