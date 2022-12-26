@@ -68,6 +68,9 @@ private struct PreviewConsoleContainer<Content>: View where Content: View {
     @Environment(\.previewWindow)
     private var previewWindow
 
+    @Environment(\.displaySelector)
+    private var displaySelector
+
     @State private var consoleController: ConsoleWindowController?
 
     var body: some View {
@@ -77,7 +80,12 @@ private struct PreviewConsoleContainer<Content>: View where Content: View {
 
                 consoleController?.close()
 
-                let controller = ConsoleWindowController(targetting: targetWindow, alignment: alignment, source: source)
+                let controller = ConsoleWindowController(
+                    targetting: targetWindow,
+                    alignment: alignment,
+                    displaySelector: displaySelector,
+                    source: source
+                )
                 controller.showWindow(nil)
 
                 consoleController = controller
@@ -91,8 +99,9 @@ final class ConsoleWindowController: NSWindowController {
 
     weak var trackedWindow: NSWindow?
     var alignment: Alignment?
+    var displaySelector: DisplaySelector?
 
-    convenience init(targetting trackedWindow: NSWindow, alignment: Alignment?, source: StaticString) {
+    convenience init(targetting trackedWindow: NSWindow, alignment: Alignment?, displaySelector: DisplaySelector, source: StaticString) {
         let panel = NSPanel(
             contentRect: NSRect(x: 0, y: 0, width: PreviewConsoleView.minWidth, height: PreviewConsoleView.minHeight),
             styleMask: [.titled, .closable, .resizable, .fullSizeContentView, .hudWindow, .utilityWindow],
@@ -107,6 +116,7 @@ final class ConsoleWindowController: NSWindowController {
 
         self.trackedWindow = trackedWindow
         self.alignment = alignment
+        self.displaySelector = displaySelector
 
         panel.title = URL(fileURLWithPath: "\(source)").deletingPathExtension().lastPathComponent
 
@@ -127,6 +137,8 @@ final class ConsoleWindowController: NSWindowController {
     private let padding: CGFloat = 22
 
     private func positionWindows() {
+        NSLog("👁️‍🗨️ Display selector: \(String(describing: displaySelector))")
+
         if let alignment {
             #warning("TODO: Allow user to specify display for this modifier as well")
             window?.position(on: .main!, using: alignment, ignoreSafeArea: false)
@@ -181,8 +193,8 @@ struct PreviewConsoleTestView: View {
 struct PreviewConsoleTestView_Previews: PreviewProvider {
     static var previews: some View {
         PreviewConsoleTestView()
-            .pin(to: .sidecarDisplay, alignment: .center, options: [])
-            .previewConsole(alignment: .bottomTrailing, options: [])
+            .pin(to: .builtInDisplay, alignment: .topTrailing, options: [])
+            .previewConsole(alignment: .topTrailing, options: [])
     }
 }
 #endif

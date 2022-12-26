@@ -11,10 +11,10 @@ public extension View {
         #if DEBUG
         if ProcessInfo.isSwiftUIPreview {
             modifier(PinToDisplayModifier(
-                selector: display,
                 alignment: alignment,
                 options: options
             ))
+            .environment(\.displaySelector, display)
         } else {
             let _ = PinToDisplayModifier.warnImproperUse()
             self
@@ -106,12 +106,13 @@ public struct PinToDisplayModifier: ViewModifier {
         public static let hideTitleBar = Options(rawValue: 1 << 2)
     }
 
-    var selector: DisplaySelector
     var alignment: Alignment
     var options: Options
 
+    @Environment(\.displaySelector)
+    private var selector: DisplaySelector
+
     /// Causes the SwiftUI view to always show up in a specific display.
-    /// - Parameter predicate: Used to determine which display will be used.
     /// - Parameter alignment: Determines the position for the preview window within the specified display's bounds.
     /// Supported alignments are `.leading`, `.center`, `.trailing`, `.top`, `.bottom`, or any valid combination such as `.topLeading`.
     /// - Parameter options: Controls the behavior of the display pinning, such as whether to enable it only for interactive previews and how to handle safe areas.
@@ -122,8 +123,7 @@ public struct PinToDisplayModifier: ViewModifier {
     /// This modifier has no effect if the app is not running in a SwiftUI preview, or in release builds.
     ///
     /// - note: There's a convenient `.pin(...)` extension on `View` for this modifier, prefer that over using it directly.
-    public init(selector: DisplaySelector, alignment: Alignment, options: Options = []) {
-        self.selector = selector
+    public init(alignment: Alignment, options: Options = []) {
         self.alignment = alignment
         self.options = options
     }
@@ -185,6 +185,17 @@ public struct PinToDisplayModifier: ViewModifier {
         }
     }
 
+}
+
+struct DisplaySelectorEnvironmentKey: EnvironmentKey {
+    static var defaultValue = DisplaySelector.mainDisplay
+}
+
+extension EnvironmentValues {
+    var displaySelector: DisplaySelectorEnvironmentKey.Value {
+        get { self[DisplaySelectorEnvironmentKey.self] }
+        set { self[DisplaySelectorEnvironmentKey.self] = newValue }
+    }
 }
 
 extension NSWindow {
