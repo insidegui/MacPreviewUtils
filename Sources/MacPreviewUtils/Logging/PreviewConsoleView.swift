@@ -23,49 +23,9 @@ struct PreviewConsoleView: View {
                 }
             }
             .textSelection(.enabled)
-            .safeAreaInset(edge: .bottom, alignment: .leading, spacing: 0, content: {
-                HStack {
-                    Button {
-                        autoscroll.toggle()
-                    } label: {
-                        Image(systemName: "arrow.up.left")
-                            .symbolVariant(.circle)
-                    }
-                    .help("Scroll automatically")
-                    .font(.headline)
-                    .foregroundColor(autoscroll ? .accentColor : .primary)
-
-                    Spacer()
-
-                    TextField("Search", text: $searchTerm)
-                        .textFieldStyle(.roundedBorder)
-                        .frame(maxWidth: 200)
-                        .overlay(alignment: .trailing) {
-                            if !searchTerm.isEmpty {
-                                Button {
-                                    searchTerm = ""
-                                } label: {
-                                    Image(systemName: "xmark")
-                                        .symbolVariant(.circle.fill)
-                                        .padding(.trailing, 6)
-                                }
-                                .buttonStyle(.plain)
-                                .foregroundStyle(.secondary)
-                            }
-                        }
-                        .onCommand(#selector(NSControl.cancelOperation)) {
-                            searchTerm = ""
-                        }
-                }
-                .buttonStyle(.borderless)
-                .padding(12)
-                .background(Material.bar)
-                .overlay(alignment: .top) {
-                    Rectangle()
-                        .frame(height: 1)
-                        .foregroundStyle(.quaternary)
-                }
-            })
+            .safeAreaInset(edge: .bottom, alignment: .leading, spacing: 0) {
+                bottomBar
+            }
             .frame(minWidth: Self.minWidth, maxWidth: .infinity, minHeight: Self.minHeight, maxHeight: .infinity)
             .task {
                 for await message in ProcessPipe.current.newMessage.values {
@@ -77,6 +37,33 @@ struct PreviewConsoleView: View {
                     }
                 }
             }
+        }
+    }
+
+    @ViewBuilder
+    private var bottomBar: some View {
+        HStack {
+            Button {
+                autoscroll.toggle()
+            } label: {
+                Image(systemName: "arrow.up.left")
+                    .symbolVariant(.circle)
+            }
+            .help("Scroll automatically")
+            .font(.headline)
+            .foregroundColor(autoscroll ? .accentColor : .primary)
+
+            Spacer()
+
+            ConsoleSearchField(label: "Search", text: $searchTerm)
+        }
+        .buttonStyle(.borderless)
+        .padding(12)
+        .background(Material.bar)
+        .overlay(alignment: .top) {
+            Rectangle()
+                .frame(height: 1)
+                .foregroundStyle(.quaternary)
         }
     }
 }
@@ -102,6 +89,33 @@ struct ConsoleMessageView: View {
                     NSPasteboard.general.clearContents()
                     NSPasteboard.general.setString(message.contents, forType: .string)
                 }
+            }
+    }
+}
+
+struct ConsoleSearchField: View {
+    var label: LocalizedStringKey
+    @Binding var text: String
+
+    var body: some View {
+        TextField(label, text: $text)
+            .textFieldStyle(.roundedBorder)
+            .frame(maxWidth: 200)
+            .overlay(alignment: .trailing) {
+                if !text.isEmpty {
+                    Button {
+                        text = ""
+                    } label: {
+                        Image(systemName: "xmark")
+                            .symbolVariant(.circle.fill)
+                            .padding(.trailing, 6)
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(.secondary)
+                }
+            }
+            .onCommand(#selector(NSControl.cancelOperation)) {
+                text = ""
             }
     }
 }

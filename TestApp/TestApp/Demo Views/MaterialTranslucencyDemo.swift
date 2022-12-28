@@ -32,9 +32,11 @@ struct MaterialTranslucencyDemo: View {
     }
 }
 
+#if DEBUG
 struct MaterialTranslucencyDemo_Previews: PreviewProvider {
     static var previews: some View {
         MaterialTranslucencyDemo()
             .frame(maxWidth: 400)
     }
 }
+#endif

@@ -16,19 +16,12 @@ public extension View {
     }
 }
 
-#if DEBUG
-extension View {
-    @ViewBuilder
-    func overrideDisplaySelectorIfNeeded(with selector: DisplaySelector?) -> some View {
-        if let selector {
-            self
-                .environment(\.displaySelector, selector)
-        } else {
-            self
-        }
-    }
-}
-
+/// Shows a standard output console listing the contents of all `print()` statements running in the preview.
+///
+/// Use this modifier when you'd like to debug previews by printing values to the console without running your app.
+/// The console can be configured with different options that customize which display it'll show up on and its position,
+/// and it may also be combined with ``PinToDisplayModifier``, in which case it'll appear next to the preview window
+/// and follow the display and position settings from that modifier.
 public struct PreviewConsoleModifier: ViewModifier {
 
     /// Configures the behavior of ``PreviewConsoleModifier``.
@@ -44,13 +37,15 @@ public struct PreviewConsoleModifier: ViewModifier {
     }
 
     /// Determines which of the Mac's displays will be used to show the console.
+    ///
     /// If not provided, uses the Mac's main display, or the same display as the ``PinToDisplayModifier``
     /// applied to the view hierarchy.
     public var display: DisplaySelector?
 
     /// Determines the position of the console within the display's bounds.
+    /// 
     /// If `nil`, then the console will be positioned automatically next to the preview window when using ``PinToDisplayModifier``,
-    /// or at the bottom trailing edge if not using the ``PinToDisplayModifier``.
+    /// or at the bottom trailing edge if not using ``PinToDisplayModifier``.
     public var alignment: Alignment?
 
     /// Configures additional behavior for the console.
@@ -99,6 +94,19 @@ public struct PreviewConsoleModifier: ViewModifier {
         #endif
     }
 
+}
+
+#if DEBUG
+extension View {
+    @ViewBuilder
+    func overrideDisplaySelectorIfNeeded(with selector: DisplaySelector?) -> some View {
+        if let selector {
+            self
+                .environment(\.displaySelector, selector)
+        } else {
+            self
+        }
+    }
 }
 
 private struct PreviewConsoleContainer<Content>: View where Content: View {
@@ -266,8 +274,8 @@ struct PreviewConsoleTestView: View {
 struct PreviewConsoleTestView_Previews: PreviewProvider {
     static var previews: some View {
         PreviewConsoleTestView()
-            .pin(to: .mainDisplay, alignment: .topTrailing, options: [])
-            .previewConsole()
+            .pin(to: .builtInDisplay, alignment: .center, options: [.interactiveOnly])
+            .previewConsole(options: [.interactiveOnly])
     }
 }
 #endif

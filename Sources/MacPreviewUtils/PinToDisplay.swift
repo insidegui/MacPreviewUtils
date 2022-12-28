@@ -60,6 +60,7 @@ public extension DisplaySelector {
         DisplaySelector { $0 == NSScreen.main }
     }()
     /// A predicate that matches the first external display that's connected to the Mac.
+    /// "External display" is any display that's not the current main display for the Mac.
     static let externalDisplay: DisplaySelector = {
         DisplaySelector { $0 != NSScreen.main }
     }()
@@ -70,14 +71,6 @@ public extension DisplaySelector {
 }
 
 // MARK: - Implementation
-
-#if DEBUG
-extension DisplaySelector {
-    func callAsFunction(_ screen: NSScreen?) -> Bool {
-        guard let screen else { return false }
-        return filter(screen)
-    }
-}
 
 /// Causes the SwiftUI view to always show up in a specific display.
 public struct PinToDisplayModifier: ViewModifier {
@@ -109,9 +102,6 @@ public struct PinToDisplayModifier: ViewModifier {
     var alignment: Alignment
     var options: Options
 
-    @Environment(\.displaySelector)
-    private var selector: DisplaySelector
-
     /// Causes the SwiftUI view to always show up in a specific display.
     /// - Parameter alignment: Determines the position for the preview window within the specified display's bounds.
     /// Supported alignments are `.leading`, `.center`, `.trailing`, `.top`, `.bottom`, or any valid combination such as `.topLeading`.
@@ -127,6 +117,10 @@ public struct PinToDisplayModifier: ViewModifier {
         self.alignment = alignment
         self.options = options
     }
+
+    #if DEBUG
+    @Environment(\.displaySelector)
+    private var selector: DisplaySelector
 
     private let windowSubject = NSWindowSubject()
 
@@ -180,7 +174,20 @@ public struct PinToDisplayModifier: ViewModifier {
             }
         }
     }
+    #else
+    public func body(content: Content) -> some View {
+        content
+    }
+    #endif
 
+}
+
+#if DEBUG
+extension DisplaySelector {
+    func callAsFunction(_ screen: NSScreen?) -> Bool {
+        guard let screen else { return false }
+        return filter(screen)
+    }
 }
 
 struct DisplaySelectorEnvironmentKey: EnvironmentKey {

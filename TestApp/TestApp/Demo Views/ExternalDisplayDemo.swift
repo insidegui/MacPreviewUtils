@@ -13,9 +13,13 @@ struct ExternalDisplayDemo: View {
     }
 }
 
+#if DEBUG
+/// This preview will be shown on the first external display that's connected to the Mac.
+/// Try playing around with the different alignments and option flags that can be used to customize the preview.
 struct ExternalDisplayDemo_Previews: PreviewProvider {
     static var previews: some View {
         ExternalDisplayDemo()
-            .pin(to: .sidecarDisplay, alignment: .center, options: [])
+            .pin(to: .externalDisplay, alignment: .center, options: [])
     }
 }
+#endif
