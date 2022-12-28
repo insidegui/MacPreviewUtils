@@ -9,22 +9,20 @@ struct PreviewConsoleView: View {
 
     @State private var autoscroll = true
 
+    @State private var searchTerm = ""
+
+    private var filteredMessages: [ProcessPipe.Message] {
+        messages.filter { searchTerm.isEmpty || $0.contents.localizedCaseInsensitiveContains(searchTerm) }
+    }
+
     var body: some View {
         ScrollViewReader { proxy in
             List {
-                ForEach(messages) { message in
-                    Text(message.contents)
-                        .tag(message.id)
-                        .id(message.id)
-                        .font(.system(.body, design: .monospaced))
-                        .contextMenu {
-                            Button("Copy") {
-                                NSPasteboard.general.clearContents()
-                                NSPasteboard.general.setString(message.contents, forType: .string)
-                            }
-                        }
+                ForEach(filteredMessages) { message in
+                    ConsoleMessageView(message: message)
                 }
             }
+            .textSelection(.enabled)
             .safeAreaInset(edge: .bottom, alignment: .leading, spacing: 0, content: {
                 HStack {
                     Button {
@@ -38,6 +36,26 @@ struct PreviewConsoleView: View {
                     .foregroundColor(autoscroll ? .accentColor : .primary)
 
                     Spacer()
+
+                    TextField("Search", text: $searchTerm)
+                        .textFieldStyle(.roundedBorder)
+                        .frame(maxWidth: 200)
+                        .overlay(alignment: .trailing) {
+                            if !searchTerm.isEmpty {
+                                Button {
+                                    searchTerm = ""
+                                } label: {
+                                    Image(systemName: "xmark")
+                                        .symbolVariant(.circle.fill)
+                                        .padding(.trailing, 6)
+                                }
+                                .buttonStyle(.plain)
+                                .foregroundStyle(.secondary)
+                            }
+                        }
+                        .onCommand(#selector(NSControl.cancelOperation)) {
+                            searchTerm = ""
+                        }
                 }
                 .buttonStyle(.borderless)
                 .padding(12)
@@ -62,4 +80,30 @@ struct PreviewConsoleView: View {
         }
     }
 }
+
+struct ConsoleMessageView: View {
+    var message: ProcessPipe.Message
+
+    private var contents: AttributedString {
+        var attributes = AttributeContainer()
+        attributes.font = Font.system(.body, design: .monospaced)
+        attributes.foregroundColor = Color.primary
+        return AttributedString(message.contents, attributes: attributes)
+    }
+
+    var body: some View {
+        Text(message.contents)
+            .font(.system(.body, design: .monospaced))
+            .foregroundColor(.primary)
+            .tag(message.id)
+            .id(message.id)
+            .contextMenu {
+                Button("Copy") {
+                    NSPasteboard.general.clearContents()
+                    NSPasteboard.general.setString(message.contents, forType: .string)
+                }
+            }
+    }
+}
+
 #endif

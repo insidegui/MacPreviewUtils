@@ -248,7 +248,7 @@ final class ConsoleWindowController: NSWindowController {
 // MARK: - Internal Preview
 
 struct PreviewConsoleTestView: View {
-    private var timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
+    private var timer = Timer.publish(every: 2, on: .main, in: .common).autoconnect()
 
     var body: some View {
         VStack {
@@ -258,7 +258,7 @@ struct PreviewConsoleTestView: View {
         }
             .frame(width: 200, height: 200)
             .onReceive(timer) { _ in
-                print("This was print()ed \(Int(Date.now.timeIntervalSinceReferenceDate))")
+                print("This was print()ed \(Int(Date.now.timeIntervalSinceReferenceDate))" + UUID().uuidString + " " + UUID().uuidString + " ")
             }
     }
 }
