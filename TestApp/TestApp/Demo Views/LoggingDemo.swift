@@ -9,20 +9,9 @@ struct LoggingDemo: View {
             }
         }
             .frame(width: 200, height: 200)
-            .onAppear {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                    fputs("This message was logged to stderr\n", stderr)
-
-                    print("⏰ This message was delayed by half a second")
-
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                        print("⏰⏰ This one was delayed by one second")
-
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                            print("👋🏻 Just logging one last time")
-                        }
-                    }
-                }
+            .task {
+                try? await Task.sleep(nanoseconds: 1_000_000_000)
+                print("👋🏻 Hello, console")
             }
     }
 }

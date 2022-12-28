@@ -1,6 +1,7 @@
 import SwiftUI
 
 public extension View {
+    /// See ``PreviewConsoleModifier``.
     func previewConsole(display: DisplaySelector? = nil,
                         alignment: Alignment? = nil,
                         options: PreviewConsoleModifier.Options = [],

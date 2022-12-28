@@ -50,6 +50,26 @@ struct MyView_Previews: PreviewProvider {
 }
 ```
 
+## Debug Previews Using `print()`
+
+Breakpoints are great for debugging an app while it's running, and sometimes `print()` statements may also be a good way to debug certain values over time.
+Unfortunately, while running in Xcode previews, there's no easy way to view your app's standard output, unless you're using `OSLog`/`NSLog` and filtering in the Console app.
+
+This library includes a modifier that displays a little console window while running an Xcode preview, allowing you to debug your previews using `print` statements.
+
+The `previewConsole()` may also be combined with the `pin(to:)` modifier mentioned above, in which case it'll follow the display and position selection from that modifier.
+
+```swift
+struct MyView_Previews: PreviewProvider {
+    static var previews: some View {
+        MyView()
+            .previewConsole()
+    }
+}
+```
+
+![Preview Console Demo](./images/PreviewConsole.jpg) 
+
 ## Will this mess up my app when debugging or in production?
 
 Nope!
