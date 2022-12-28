@@ -68,6 +68,8 @@ struct MyView_Previews: PreviewProvider {
 }
 ```
 
+> Note: this modifier will only show the app's standard output, so it won't display messages logged with `os_log` or `Logger`. Support for the unified logging system and stderr is planned.
+
 ![Preview Console Demo](./images/PreviewConsole.jpg) 
 
 ## Will this mess up my app when debugging or in production?
