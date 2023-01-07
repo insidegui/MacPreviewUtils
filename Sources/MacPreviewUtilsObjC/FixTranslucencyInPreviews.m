@@ -14,8 +14,7 @@ XCODE_RUNNING_FOR_PREVIEWS environment variable so that it won't affect regular 
 @import ObjectiveC.runtime;
 @import MacPreviewUtils;
 
-@interface FixTranslucencyInPreviews: NSObject
-@end
+#import "FixTranslucencyInPreviews.h"
 
 @implementation FixTranslucencyInPreviews
 
