@@ -228,7 +228,7 @@ extension NSWindow {
     }
 }
 
-extension NSScreen {
+public extension NSScreen {
     static func matching(_ selector: DisplaySelector) -> NSScreen? {
         NSScreen.screens.first(where: { selector($0) })
     }
