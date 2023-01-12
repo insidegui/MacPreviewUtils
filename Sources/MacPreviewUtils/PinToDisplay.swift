@@ -127,9 +127,9 @@ public struct PinToDisplayModifier: ViewModifier {
     public func body(content: Content) -> some View {
         if ProcessInfo.isSwiftUIPreview {
             content
-                .background {
+                .background(
                     PreviewWindowProvidingView(subject: windowSubject)
-                }
+                )
                 .onReceive(windowSubject) { window in
                     guard let window else { return }
                     attach(to: window)

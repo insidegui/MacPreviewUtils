@@ -1,6 +1,7 @@
 #if DEBUG
 import SwiftUI
 
+@available(macOS 12.0, *)
 struct PreviewConsoleView: View {
     static var minWidth: CGFloat { 580 }
     static var minHeight: CGFloat { 250 }
@@ -68,6 +69,7 @@ struct PreviewConsoleView: View {
     }
 }
 
+@available(macOS 12.0, *)
 struct ConsoleMessageView: View {
     var message: ProcessPipe.Message
 
@@ -93,6 +95,7 @@ struct ConsoleMessageView: View {
     }
 }
 
+@available(macOS 12.0, *)
 struct ConsoleSearchField: View {
     var label: LocalizedStringKey
     @Binding var text: String

@@ -2,6 +2,7 @@
 import Foundation
 import Combine
 
+@available(macOS 12.0, *)
 final class ProcessPipe {
 
     enum MessageSource: Int {

@@ -30,9 +30,9 @@ struct PreviewWindowModifier: ViewModifier {
     func body(content: Content) -> some View {
         content
             .environment(\.previewWindow, window)
-            .background {
+            .background(
                 PreviewWindowProvidingView(subject: windowSubject)
-            }
+            )
             .onReceive(windowSubject.debounce(for: .milliseconds(100), scheduler: DispatchQueue.main)) { [window] newWindow in
                 guard newWindow !== window else { return }
                 self.window = newWindow

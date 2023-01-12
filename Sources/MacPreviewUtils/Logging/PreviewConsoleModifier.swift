@@ -1,5 +1,6 @@
 import SwiftUI
 
+@available(macOS 12.0, *)
 public extension View {
     /// See ``PreviewConsoleModifier``.
     func previewConsole(display: DisplaySelector? = nil,
@@ -23,6 +24,7 @@ public extension View {
 /// The console can be configured with different options that customize which display it'll show up on and its position,
 /// and it may also be combined with ``PinToDisplayModifier``, in which case it'll appear next to the preview window
 /// and follow the display and position settings from that modifier.
+@available(macOS 12.0, *)
 public struct PreviewConsoleModifier: ViewModifier {
 
     /// Configures the behavior of ``PreviewConsoleModifier``.
@@ -98,6 +100,7 @@ public struct PreviewConsoleModifier: ViewModifier {
 }
 
 #if DEBUG
+@available(macOS 12.0, *)
 extension View {
     @ViewBuilder
     func overrideDisplaySelectorIfNeeded(with selector: DisplaySelector?) -> some View {
@@ -110,6 +113,7 @@ extension View {
     }
 }
 
+@available(macOS 12.0, *)
 private struct PreviewConsoleContainer<Content>: View where Content: View {
     var alignment: Alignment?
     var source: StaticString
@@ -145,6 +149,7 @@ private struct PreviewConsoleContainer<Content>: View where Content: View {
 
 // MARK: - Console UI Implementation
 
+@available(macOS 12.0, *)
 final class ConsolePanel: NSPanel, MacPreviewUtilsWindow {
 
     override func constrainFrameRect(_ frameRect: NSRect, to screen: NSScreen?) -> NSRect {
@@ -157,6 +162,7 @@ final class ConsolePanel: NSPanel, MacPreviewUtilsWindow {
 
 }
 
+@available(macOS 12.0, *)
 final class ConsoleWindowController: NSWindowController {
 
     static var current: ConsoleWindowController?
@@ -256,6 +262,7 @@ final class ConsoleWindowController: NSWindowController {
 
 // MARK: - Internal Preview
 
+@available(macOS 12.0, *)
 struct PreviewConsoleTestView: View {
     private var timer = Timer.publish(every: 2, on: .main, in: .common).autoconnect()
 
@@ -272,6 +279,7 @@ struct PreviewConsoleTestView: View {
     }
 }
 
+@available(macOS 12.0, *)
 struct PreviewConsoleTestView_Previews: PreviewProvider {
     static var previews: some View {
         PreviewConsoleTestView()

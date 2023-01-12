@@ -5,7 +5,7 @@ import PackageDescription
 
 let package = Package(
     name: "MacPreviewUtils",
-    platforms: [.macOS(.v12)],
+    platforms: [.macOS(.v11)],
     products: [
         .library(
             name: "MacPreviewUtils",
